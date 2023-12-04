@@ -2,12 +2,8 @@ import cv2
 import numpy as np
 import dijkstra as di
 import matplotlib.pyplot as plt
-import sys
-# sys.path.append('/home/pi/Desktop/modules/pymodi_master/pymodi-master/modi')
-# from modi import modi
-# from modules.pymodi_master.pymodi-master.modi import modi
-# sys.path.append('/home/pi/Desktop/modules/yolov5_master')
-# from yolov5_master import detect as yolo_det
+from modules.pymodi_master.pymodi_master.modi import modi
+from modules.yolov5_master import detect as yolo_det
 
 
 def calculate_vanishing_point(lines):
