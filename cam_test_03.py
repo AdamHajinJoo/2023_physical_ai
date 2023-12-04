@@ -60,16 +60,16 @@ def main():
                 # print("None")
             elif line_arr.ndim == 1:
                 # print(1)
-                x1, y1, x2, y2 = line_arr[0], line_arr[1]+213, line_arr[2], line_arr[3]+213
+                x1, y1, x2, y2 = line_arr[0], line_arr[1]+roi_y, line_arr[2], line_arr[3]+roi_y
             else:
                 # print(line_arr.size)
-                x1, y1, x2, y2 = line_arr[:, 0], line_arr[:, 1]+213, line_arr[:, 2], line_arr[:, 3]+213
+                x1, y1, x2, y2 = line_arr[:, 0], line_arr[:, 1]+roi_y, line_arr[:, 2], line_arr[:, 3]+roi_y
                 slope_degree = (np.arctan2(y2 - y1, x2 - x1) * 180) / np.pi
-                _, _, all_lines, _, _, mean_line, _, _, mean_line_r_th = hough.lines_filtered(slope_degree, line_arr)
+                _, _, all_lines, _, _, mean_line = hough.lines_filtered(slope_degree, line_arr)
 
                 # 선 그리기
-                all_lines[:, :, 1] += 213
-                all_lines[:, :, 3] += 213
+                all_lines[:, :, [1, 3]] += roi_y
+                mean_line[:, :, [1, 3]] += roi_y
 
                 # 소실점 생성
                 # x_vanish, y_vanish = find_intersection(
