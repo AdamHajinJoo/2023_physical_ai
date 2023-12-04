@@ -46,8 +46,8 @@ def main():
                 hough.draw_lines(n_frame, mean_line, 0, 0, 255)
              
             cv2.imshow("n_frame", n_frame)
-            cv2.imshow("blur", blur)
-            cv2.imshow("edges", edges)
+            # cv2.imshow("blur", blur)
+            # cv2.imshow("edges", edges)
             
         if cv2.waitKey(30) & 0xFF == ord('q'):
             break

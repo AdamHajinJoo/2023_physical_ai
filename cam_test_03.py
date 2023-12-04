@@ -15,7 +15,7 @@ def find_intersection(x1, y1, x2, y2, x3, y3, x4, y4):
     
     # 두 직선이 평행인 경우
     if m1 == m2:
-        return None
+        return 0, 0  # 수정된 부분: 기본값으로 (0, 0) 반환
     
     # 교점의 x, y 좌표 계산
     if m1 is not None and m2 is not None:
@@ -41,13 +41,13 @@ def gen_slope_degree(d_lines):
 # 기울기에 따른 lines 필터링
 def lines_filtered_lines(d_slope_degree, d_lines):
     # 수평 기울기 제한
-    d_line_arr = d_line_arr[np.abs(d_slope_degree)>20]
+    d_lines = d_lines[np.abs(d_slope_degree)>20]
     d_slope_degree = d_slope_degree[np.abs(d_slope_degree)>20]
     # 수직 기울기 제한
-    d_line_arr = d_line_arr[np.abs(d_slope_degree)<75]
+    d_lines = d_lines[np.abs(d_slope_degree)<75]
     d_slope_degree = d_slope_degree[np.abs(d_slope_degree)<75]
     # 필터링된 직선 버리기
-    L_lines, R_lines = d_line_arr[(d_slope_degree>0),:], d_line_arr[(d_slope_degree<0),:]
+    L_lines, R_lines = d_lines[(d_slope_degree>0),:], d_lines[(d_slope_degree<0),:]
     L_lines, R_lines = L_lines[:,None], R_lines[:,None]
     
     # NaN 값이 있는지 확인 후 정수로 변환
@@ -66,6 +66,24 @@ def lines_filtered_lines(d_slope_degree, d_lines):
     mean_line = np.concatenate((L_mean_line, R_mean_line), axis=0)
     
     return L_lines, R_lines, all_lines, L_mean_line, R_mean_line, mean_line
+
+def calculate_vanishing_point(lines):
+    if lines is not None and len(lines) >= 2:
+        # 두 개의 평균 직선을 사용하여 최소 자승 문제로 계산
+        vanishing_point = None
+        rho1, theta1 = lines[0]
+        rho2, theta2 = lines[1]
+        A = np.array([[np.cos(theta1), np.sin(theta1)],
+                      [np.cos(theta2), np.sin(theta2)]])
+        b = np.array([rho1, rho2])
+        try:
+            vanishing_point, _, _, _ = np.linalg.lstsq(A, b, rcond=None)
+            vanishing_point = vanishing_point.astype(int)
+        except np.linalg.LinAlgError:
+            pass  # 예외 처리: 특이 행렬이 발생하는 경우 무시
+        return vanishing_point
+    return None
+
 
 roi_y = 213
 
@@ -103,20 +121,23 @@ def main():
                 # x1, y1, x2, y2 = line_arr[0], line_arr[1]+roi_y, line_arr[2], line_arr[3]+roi_y
             else:
                 # print(line_arr.size)
+                x1, y1, x2, y2 = line_arr[:, 0], line_arr[:, 1]+roi_y, line_arr[:, 2], line_arr[:, 3]+roi_y
                 slope_degree = gen_slope_degree(lines)
-                # _, _, all_lines, _, _, mean_line = hough.lines_filtered(slope_degree, line_arr)
 
-                # 선 그리기
-                # all_lines[:, :, [1, 3]] += roi_y
-                # mean_line[:, :, [1, 3]] += roi_y
+                _, _, _, _, _, mean_line = hough.lines_filtered(slope_degree, line_arr)
+                mean_line[:, :, [1, 3]] += roi_y
+                _, _, _, _, _, mean_line_rth = hough.lines_filtered(slope_degree, lines)
+                mean_line_rth[:, :, [1, 3]] += roi_y
 
                 # 소실점 생성
-                # x_vanish, y_vanish = find_intersection(
-                #     mean_line[0, 0, 0], mean_line[0, 0, 1],
-                #     mean_line[0, 0, 2], mean_line[0, 0, 3],
-                #     mean_line[1, 0, 0], mean_line[1, 0, 1],
-                #     mean_line[1, 0, 2], mean_line[1, 0, 3]
-                # )
+                x_vanish, y_vanish = find_intersection(
+                    mean_line[0, 0, 0], mean_line[0, 0, 1],
+                    mean_line[0, 0, 2], mean_line[0, 0, 3],
+                    mean_line[1, 0, 0], mean_line[1, 0, 1],
+                    mean_line[1, 0, 2], mean_line[1, 0, 3]
+                )
+
+                vanishing_point = calculate_vanishing_point(mean_line_rth)
 
                 # hough.draw_lines(n_frame, all_lines, 128, 0, 0)
                 # hough.draw_lines(n_frame, mean_line, 0, 0, 255)
@@ -124,8 +145,8 @@ def main():
             cv2.imshow("n_frame", n_frame)
             
         if cv2.waitKey(30) & 0xFF == ord('q'):
-            print(slope_degree)
-            print(slope_degree_2)
+            print(x_vanish, y_vanish)
+            print(vanishing_point)
             break
 
     cap.release()
