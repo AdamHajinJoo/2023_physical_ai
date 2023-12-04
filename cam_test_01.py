@@ -12,8 +12,8 @@ while True:
     ret, frame = cap.read()
     
     if ret:
-        d_frame = cv2.resize(frame, (416, 416))
-        cv2.imshow("RESIZED", d_frame)
+        n_frame = cv2.resize(frame, (416, 416))
+        cv2.imshow("RESIZED", n_frame)
         
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
