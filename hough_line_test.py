@@ -1,6 +1,13 @@
 import cv2
 import numpy as np
 
+# 영상 전처리 (허프 변환을 적용하기 전에 필요한 전처리 수행)
+def preprocessing_for_hough(frame):
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    blur = cv2.GaussianBlur(gray, (5, 5), 0)
+    edges = cv2.Canny(blur, 50, 150, apertureSize=3)
+    return edges
+
 def create_hough_lines(lines):
     line_arr = []
     if lines is not None and len(lines) > 0:
@@ -18,45 +25,54 @@ def create_hough_lines(lines):
     return np.array(line_arr)
 
 def draw_lines(frame, line_arr):
-    for line in line_arr:
-        cv2.line(frame, (line[0], line[1]), (line[2], line[3]), (0, 0, 255), 2)
+    if line_arr.shape[0] > 0:
+        for line in line_arr:
+            line = np.squeeze(line)  # 만약 shape이 (1, 1, 4)인 경우 squeeze 사용
+            cv2.line(frame, (line[0], line[1]), (line[2], line[3]), (0, 0, 255), 2)
+        
+def region_of_interest(frame):
+    roi = frame[246 : ,  : ]
+    cv2.rectangle(frame, (0, 246, 416, 416), 255, 2)
+    return None
+
+def lines_filtered(d_line_arr, d_slope_degree):
+    # 수평 기울기 제한
+    d_line_arr = d_line_arr[np.abs(d_slope_degree)>20]
+    d_slope_degree = d_slope_degree[np.abs(d_slope_degree)>20]
+    # 수직 기울기 제한
+    d_line_arr = d_line_arr[np.abs(d_slope_degree)<85]
+    d_slope_degree = d_slope_degree[np.abs(d_slope_degree)<85]
+    # 필터링된 직선 버리기
+    L_lines, R_lines = d_line_arr[(d_slope_degree>0),:], d_line_arr[(d_slope_degree<0),:]
+    L_lines, R_lines = L_lines[:,None], R_lines[:,None]
+    # L_lines와 R_lines를 합치기
+    all_lines = np.concatenate((L_lines, R_lines), axis=0)
+    
+    return L_lines, R_lines, all_lines
 
 def main():
     # 비디오 캡처 객체 초기화
-    frame = cv2.imread('img_test.jpg')
-    dframe = cv2.resize(frame, (416, 416))
+    frame = cv2.imread('img_test3.jpg')
+    n_frame = cv2.resize(frame, (416, 416))
     
-    # 영상 전처리 (허프 변환을 적용하기 전에 필요한 전처리 수행)
-    gray = cv2.cvtColor(dframe, cv2.COLOR_BGR2GRAY)
-    blur = cv2.GaussianBlur(gray, (3, 3), 0)
-    edges = cv2.Canny(blur, 50, 150, apertureSize=3)
+    edges = preprocessing_for_hough(n_frame)
 
     # 허프 변환을 사용하여 선 감지
-    lines = cv2.HoughLines(edges, 1, np.pi / 180, threshold=130)
-    line_arr = create_hough_lines(lines)
-    # 기울기 구하기
-    line_arr = np.squeeze(line_arr)   # line_arr 배열을 변형
+    lines = cv2.HoughLines(edges, 1, np.pi / 180, threshold=120)
+    line_arr = np.squeeze(create_hough_lines(lines))
     
-    # 직선의 시작점과 끝
+    # 기울기 구하기
     x1, y1, x2, y2 = line_arr[:, 0], line_arr[:, 1], line_arr[:, 2], line_arr[:, 3]
     slope_degree = (np.arctan2(y2 - y1, x2 - x1) * 180) / np.pi
-    print(slope_degree)
     
-    # 수평 기울기 제한
-    line_arr = line_arr[np.abs(slope_degree)>20]
-    slope_degree = slope_degree[np.abs(slope_degree)>20]
-    # 수직 기울기 제한
-    line_arr = line_arr[np.abs(slope_degree)<85]
-    slope_degree = slope_degree[np.abs(slope_degree)<85]
-    # 필터링된 직선 버리기
-    L_lines, R_lines = line_arr[(slope_degree>0),:], line_arr[(slope_degree<0),:]
-    L_lines, R_lines = L_lines[:,None], R_lines[:,None]
+    L_lines, R_lines, all_lines = lines_filtered(line_arr, slope_degree)
 
     # 허프 변환 선 그리기
-    draw_lines(dframe, line_arr)
-
+    draw_lines(n_frame, all_lines)
+    region_of_interest(n_frame)
+    
     # 화면에 결과 표시
-    cv2.imshow("Hough Transform", dframe)
+    cv2.imshow("Hough Transform", n_frame)
     cv2.waitKey()
     #비디오 캡처 객체 해제
     cv2.destroyAllWindows()
