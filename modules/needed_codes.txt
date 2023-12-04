@@ -1,0 +1,22 @@
+cd C:\Users\CS270\Desktop\20231024
+conda create --name pymodi
+conda activate pymodi
+pip install pymodi
+python main.py
+
+
+
+
+cd C:\Users\CS270\Desktop\20231024\FrozenLake
+conda create -n temp python=3.6
+conda activate temp
+cd gym
+pip install -e .
+cd \.
+python flake_v3.py    # 모델 훈련
+
+
+
+
+# visualizing path results:  Add time.sleep(100) before row 126
+python griddrawer.py
