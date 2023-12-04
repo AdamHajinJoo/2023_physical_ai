@@ -30,6 +30,24 @@ def find_intersection(x1, y1, x2, y2, x3, y3, x4, y4):
     
     return x_intersect, y_intersect
 
+def calculate_vanishing_point(lines):
+    rho1, theta1 = lines[0][0]
+    rho2, theta2 = lines[1][0]
+
+    A = np.array([
+        [np.cos(theta1), np.sin(theta1)],
+        [np.cos(theta2), np.sin(theta2)]
+    ])
+    
+    b = np.array([rho1, rho2])
+    
+    try:
+        x, y = np.linalg.solve(A, b)
+        return int(x), int(y)
+    except np.linalg.LinAlgError:
+        return None
+
+
 def gen_slope_degree(d_lines):
     slope = []
     if d_lines is not None and len(d_lines) > 0:
@@ -39,7 +57,7 @@ def gen_slope_degree(d_lines):
     return np.array(slope)
 
 # 기울기에 따른 lines 필터링
-def lines_filtered_lines(d_slope_degree, d_lines):
+def lines_filtered_rth(d_slope_degree, d_lines):
     # 수평 기울기 제한
     d_lines = d_lines[np.abs(d_slope_degree)>20]
     d_slope_degree = d_slope_degree[np.abs(d_slope_degree)>20]
@@ -52,12 +70,12 @@ def lines_filtered_lines(d_slope_degree, d_lines):
     
     # NaN 값이 있는지 확인 후 정수로 변환
     if L_lines.size > 0:
-        L_mean_line = np.expand_dims(np.nanmean(L_lines, axis=0), axis=0).astype(int)
+        L_mean_line = np.nanmean(L_lines, axis=0)[None, None, :].astype(int)
     else:
         L_mean_line = np.zeros((1, 1, 4), dtype=int)
-    
+
     if R_lines.size > 0:
-        R_mean_line = np.expand_dims(np.nanmean(R_lines, axis=0), axis=0).astype(int)
+        R_mean_line = np.nanmean(R_lines, axis=0)[None, None, :].astype(int)
     else:
         R_mean_line = np.zeros((1, 1, 4), dtype=int)
 
@@ -66,24 +84,6 @@ def lines_filtered_lines(d_slope_degree, d_lines):
     mean_line = np.concatenate((L_mean_line, R_mean_line), axis=0)
     
     return L_lines, R_lines, all_lines, L_mean_line, R_mean_line, mean_line
-
-def calculate_vanishing_point(lines):
-    if lines is not None and len(lines) >= 2:
-        # 두 개의 평균 직선을 사용하여 최소 자승 문제로 계산
-        vanishing_point = None
-        rho1, theta1 = lines[0]
-        rho2, theta2 = lines[1]
-        A = np.array([[np.cos(theta1), np.sin(theta1)],
-                      [np.cos(theta2), np.sin(theta2)]])
-        b = np.array([rho1, rho2])
-        try:
-            vanishing_point, _, _, _ = np.linalg.lstsq(A, b, rcond=None)
-            vanishing_point = vanishing_point.astype(int)
-        except np.linalg.LinAlgError:
-            pass  # 예외 처리: 특이 행렬이 발생하는 경우 무시
-        return vanishing_point
-    return None
-
 
 roi_y = 213
 
@@ -126,8 +126,9 @@ def main():
 
                 _, _, _, _, _, mean_line = hough.lines_filtered(slope_degree, line_arr)
                 mean_line[:, :, [1, 3]] += roi_y
-                _, _, _, _, _, mean_line_rth = hough.lines_filtered(slope_degree, lines)
-                mean_line_rth[:, :, [1, 3]] += roi_y
+                _, _, _, _, _, mean_line_rth = lines_filtered_rth(slope_degree, lines)
+                print(mean_line)
+                print(mean_line_rth)
 
                 # 소실점 생성
                 x_vanish, y_vanish = find_intersection(
@@ -136,8 +137,7 @@ def main():
                     mean_line[1, 0, 0], mean_line[1, 0, 1],
                     mean_line[1, 0, 2], mean_line[1, 0, 3]
                 )
-
-                vanishing_point = calculate_vanishing_point(mean_line_rth)
+                # vanishing_point = calculate_vanishing_point(mean_line_rth)
 
                 # hough.draw_lines(n_frame, all_lines, 128, 0, 0)
                 # hough.draw_lines(n_frame, mean_line, 0, 0, 255)
@@ -146,7 +146,7 @@ def main():
             
         if cv2.waitKey(30) & 0xFF == ord('q'):
             print(x_vanish, y_vanish)
-            print(vanishing_point)
+            # print(vanishing_point)
             break
 
     cap.release()
