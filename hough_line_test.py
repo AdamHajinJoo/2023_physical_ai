@@ -39,7 +39,7 @@ def draw_lines(frame, line_arr, B, G, R):
             line = np.squeeze(line)  # 만약 shape이 (1, 1, 4)인 경우 squeeze 사용
             cv2.line(frame, (line[0], line[1]), (line[2], line[3]), (B, G, R), 2)
 
-# 기울기에 따른 직선 필터링
+# 기울기에 따른 line_arr 필터링
 def lines_filtered(d_slope_degree, d_line_arr):
     # 수평 기울기 제한
     d_line_arr = d_line_arr[np.abs(d_slope_degree)>20]

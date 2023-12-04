@@ -29,17 +29,18 @@ def main():
             if line_arr.size == 0:
                 pass
                 # print("None")
+            elif line_arr.ndim == 1:
+                # print(1)
+                x1, y1, x2, y2 = line_arr[0], line_arr[1]+roi_y, line_arr[2], line_arr[3]+roi_y
             else:
-                print(line_arr.size == lines.size)
-                if line_arr.ndim == 1:
-                    x1, y1, x2, y2 = line_arr[0], line_arr[1]+roi_y, line_arr[2], line_arr[3]+roi_y
-                else:
-                    x1, y1, x2, y2 = line_arr[:, 0], line_arr[:, 1]+roi_y, line_arr[:, 2], line_arr[:, 3]+roi_y
-                
+                # print(line_arr.size)
+                x1, y1, x2, y2 = line_arr[:, 0], line_arr[:, 1]+roi_y, line_arr[:, 2], line_arr[:, 3]+roi_y
                 slope_degree = (np.arctan2(y2 - y1, x2 - x1) * 180) / np.pi
-                _, _, all_lines, _, _, mean_line = hough.lines_filtered(line_arr, slope_degree)
-                mean_line[:, :, [1, 3]] += roi_y
+                _, _, all_lines, _, _, mean_line = hough.lines_filtered(slope_degree, line_arr)
+
+                # 선 그리기
                 all_lines[:, :, [1, 3]] += roi_y
+                mean_line[:, :, [1, 3]] += roi_y
 
                 hough.draw_lines(n_frame, all_lines, 128, 0, 0)
                 hough.draw_lines(n_frame, mean_line, 0, 0, 255)
