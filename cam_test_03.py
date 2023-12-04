@@ -56,6 +56,7 @@ def main():
             
             # 선 솎아내기
             if line_arr.size == 0:
+                pass
                 # print("None")
             elif line_arr.ndim == 1:
                 # print(1)
@@ -64,7 +65,7 @@ def main():
                 # print(line_arr.size)
                 x1, y1, x2, y2 = line_arr[:, 0], line_arr[:, 1]+213, line_arr[:, 2], line_arr[:, 3]+213
                 slope_degree = (np.arctan2(y2 - y1, x2 - x1) * 180) / np.pi
-                L_lines, R_lines, all_lines = hough.lines_filtered(line_arr, slope_degree)
+                _, _, all_lines, _, _, mean_line, _, _, mean_line_r_th = hough.lines_filtered(slope_degree, line_arr)
 
                 # 선 그리기
                 all_lines[:, :, 1] += 213
