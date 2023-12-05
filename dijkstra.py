@@ -1,38 +1,18 @@
 import heapq
 
 graph_map = {
-    'A': {'B': 'rrr', 'C': 'd'},
-    'B': {'A': 'lll', 'E': 'd'},
-    'C': {'A': 'u', 'D': 'r', 'F': 'd'},
-    'D': {'C': 'l', 'E': 'r', 'G': 'd'},
-    'E': {'B': 'u', 'D': 'l', 'H': 'd'},
-    'F': {'C': 'u', 'G': 'r', 'I': 'd'},
-    'G': {'D': 'u', 'F': 'l', 'H': 'r'},
-    'H': {'E': 'u', 'G': 'l', 'K': 'd'},
-    'I': {'F': 'u', 'J': 'r', 'L': 'd'},
-    'J': {'I': 'l', 'K': 'r', 'M': 'd'},
-    'K': {'H': 'u', 'J': 'l', 'N': 'd'},
-    'L': {'I': 'u', 'M': 'r'},
-    'M': {'J': 'u', 'L': 'l', 'N': 'r'},
-    'N': {'K': 'u', 'M': 'l'}
+    'A': {'B': 'r', 'D': 'd'},
+    'B': {'A': 'l', 'C': 'r', 'E': 'd'},
+    'C': {'B': 'l', 'F': 'd'},
+    'D': {'A': 'u', 'E': 'r', 'G': 'd'},
+    'E': {'B': 'u', 'D': 'l', 'F': 'r'},
+    'F': {'C': 'u', 'E': 'l', 'I': 'd'},
+    'G': {'D': 'u', 'H': 'r'},
+    'H': {'G': 'l', 'I': 'r'},
+    'I': {'F': 'u', 'H': 'l'}
 }
 
-graph_for_move_plan = {
-    'A': {'B': 3, 'C': 1},
-    'B': {'A': 3, 'E': 1},
-    'C': {'A': 1, 'D': 1},
-    'D': {'C': 1, 'E': 1, 'G': 1},
-    'E': {'B': 1, 'D': 1, 'H': 1},
-    'F': {'C': 1, 'G': 1, 'I': 1},
-    'G': {'D': 1, 'F': 1, 'H': 1},
-    'H': {'E': 1, 'G': 1, 'K': 1},
-    'I': {'F': 1, 'J': 1, 'L': 1},
-    'J': {'I': 1, 'K': 1, 'M': 1},
-    'K': {'H': 1, 'J': 1, 'N': 1},
-    'L': {'I': 1, 'M': 1},
-    'M': {'J': 1, 'L': 1, 'N': 1},
-    'N': {'K': 1, 'M': 1}
-}
+
 
 def amount_direction_of_turn(curr_d, next_d): #우회전 +, 좌회전 -
     if curr_d == next_d:
@@ -89,11 +69,6 @@ def dijkstra(graph_param, destinations, init_direction):
 
     return result
 
-first_dir = 'd'
-destinations = ['A', 'G', 'J', 'N']
-result = dijkstra(graph_map, destinations, first_dir)
-# print(result)
-
 #노드로 지정된 곳 밖에서 움직일 때... -> 이건 걍 맵만 바꿔주면 ok, 모든 판을 노드로
 #처음 시작 위치
 
@@ -118,6 +93,14 @@ def path_to_movement_plan(path, graph, init_dir):
     
     return plan
 
-movement_plan = path_to_movement_plan(result[1], graph_map, first_dir)
-# print(movement_plan)
+
+
+if __name__=="__main__":
+    first_dir = 'd'
+    destinations = ['A', 'G', 'J', 'N']
+    result = dijkstra(graph_map, destinations, first_dir)
+    print(result)
+
+    movement_plan = path_to_movement_plan(result[1], graph_map, first_dir)
+    print(movement_plan)
 

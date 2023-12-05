@@ -28,12 +28,6 @@ right_motor = 0
 
 base_rpm = 1
 
-def set_left_motor_rpm(left_motor_rpm):
-    pass
-
-def set_right_motor_rpm(right_motor_rpm):
-    pass
-
 def control_motors(current_x, target_x):
     # P 제어 수행
     error = target_x - current_x
@@ -64,6 +58,21 @@ def main():
     # 카메라 초기화
     camera_index = 1
     cap = cv2.VideoCapture(camera_index)
+
+    # modi 초기화
+    bundle = modi.MODI(1)
+    motor1 = bundle.motors[0]
+    motor2 = bundle.motors[1]
+
+    def set_left_motor_rpm(motor1, motor2, left_motor_rpm):
+        motor1.speed[0] = left_motor_rpm
+        motor2.speed[0] = left_motor_rpm
+        # motor1의 왼쪽 바퀴와 motor2의 왼쪽 바퀴 모두 rpm 설정
+
+    def set_right_motor_rpm(motor1, motor2, right_motor_rpm):
+        motor1.speed[1] = -right_motor_rpm
+        motor2.speed[1] = -right_motor_rpm
+        # motor1의 왼쪽 바퀴와 motor2의 오른쪽 바퀴 모두 rpm 설정
 
     if not cap.isOpened():
         print("Could not open webcam")
@@ -133,23 +142,21 @@ def main():
         
         cv2.rectangle(frame, (roiL_coord[0][0], roiL_coord[0][1]), (roiL_coord[1][0], roiL_coord[1][1]), (255, 128, 128), 2)  # roi_l
         cv2.rectangle(frame, (roiR_coord[0][0], roiR_coord[0][1]), (roiR_coord[1][0], roiR_coord[1][1]), (255, 128, 128), 2)  # roi_R
-                    
-        # order = movement_plan.pop(0) 
         
-        # if order == 's':
-        #     straight_P_control()
+        order = movement_plan.pop(0) 
         
-        # if order == 'r':
-        #     turn_right()
-
-        # if order == 'l':
-        #     turn_left()
+        if order == 's':
+            pass
+        if order == 'r':
+            turn_right()
+        if order == 'l':
+            turn_left()
                     
         cv2.imshow('ON_AIR', frame)
         # cv2.imshow('L', roiL)
         # cv2.imshow('R', roiR)
         
-        if cv2.waitKey(40) & 0xFF == ord('q'):
+        if cv2.waitKey(10) & 0xFF == ord('q'):
             print(x_van, y_van)
             break
 
