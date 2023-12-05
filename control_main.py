@@ -12,13 +12,16 @@ side = 416
 roiL_coord = [(0, 200), (160, 400)]
 roiR_coord = [(256, 200), (416, 400)]
 
+x_vanish = 213
+y_vanish = 250
+
 def mouse_callback(event, x, y, flags, param):
     global cursor_position
     cursor_position = (x, y)
 
 def main():
     # 카메라 초기화
-    camera_index = 0
+    camera_index = 1
     cap = cv2.VideoCapture(camera_index)
 
     if not cap.isOpened():
@@ -34,11 +37,7 @@ def main():
             break
 
         frame = cv2.resize(o_frame, (side, side))
-        
-         # 창에 마우스 이벤트 콜백 함수 등록
-        cv2.namedWindow('ON_AIR')
-        cv2.setMouseCallback('ON_AIR', mouse_callback)
-        
+                
         roiL = frame[roiL_coord[0][1] : roiL_coord[1][1], roiL_coord[0][0] : roiL_coord[1][0]]
         roiR = frame[roiR_coord[0][1] : roiR_coord[1][1], roiR_coord[0][0] : roiR_coord[1][0]]
 
@@ -52,13 +51,7 @@ def main():
             pass
         elif linesL_arr.ndim == 1 or linesR_arr.ndim == 1:
             pass
-            # print("1dim_L: {0} (count: {1}) \n1dim_R: {2} (count: {3})\n".format(linesL_arr, int(linesL_arr.size / 4), linesR_arr, int(linesR_arr.size / 4)))
         else:
-            # print("L: {0} (count: {1}) \nR: {2} (count: {3})\n".format(linesL_arr, int(linesL_arr.size / 4), linesR_arr, int(linesR_arr.size / 4)))
-            # print("slopeL: {0} (count: {1}) \nslopeR: {2} (count: {3})\n".format(slopesL, int(slopesL.size), slopesR, int(slopesR.size)))
-            cv2.rectangle(frame, (roiL_coord[0][0], roiL_coord[0][1]), (roiL_coord[1][0], roiL_coord[1][1]), (255, 128, 128), 2)              # roi_l
-            cv2.rectangle(frame, (roiR_coord[0][0], roiR_coord[0][1]), (roiR_coord[1][0], roiR_coord[1][1]), (255, 128, 128), 2)  # roi_R
-
             linesL, linesR, _, _ = slope_filter(slopesL, linesL_arr, slopesR, linesR_arr)
             L_mean = np.nanmean(linesL, axis=0).astype(int)
             R_mean = np.nanmean(linesR, axis=0).astype(int)
@@ -83,20 +76,18 @@ def main():
             draw_lines(frame, L_mean_shifted, 0, 0, 255)
             draw_lines(frame, R_mean_shifted, 0, 0, 255)
             
-            x_vanish, y_vanish = find_intersection(
+            cx, cy = find_intersection(
                 L_mean_shifted[0], L_mean_shifted[1], L_mean_shifted[2], L_mean_shifted[3],
                 R_mean_shifted[0], R_mean_shifted[1], R_mean_shifted[2], R_mean_shifted[3],
             )
+            x_vanish = cx
+            y_vanish = cy
             
-            print("L_mean: ({0},{1})~({2},{3})".format(L_mean_shifted[0], L_mean_shifted[1], L_mean_shifted[2], L_mean_shifted[3]))
-            print("R_mean: ({0},{1})~({2},{3})".format(R_mean_shifted[0], R_mean_shifted[1], R_mean_shifted[2], R_mean_shifted[3]))
-            print("({0}, {1})".format(x_vanish, y_vanish))
-            print()
-            
-            # cv2.circle(frame, (x_van, y_van), 5, (0, 255, 0), 2)
-        # 현재 마우스 좌표 표시
-        cv2.putText(frame, f"mouse: {cursor_position}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
-            
+        cv2.circle(frame, (x_vanish, y_vanish), 5, (0, 255, 0), 2)
+        
+        cv2.rectangle(frame, (roiL_coord[0][0], roiL_coord[0][1]), (roiL_coord[1][0], roiL_coord[1][1]), (255, 128, 128), 2)  # roi_l
+        cv2.rectangle(frame, (roiR_coord[0][0], roiR_coord[0][1]), (roiR_coord[1][0], roiR_coord[1][1]), (255, 128, 128), 2)  # roi_R
+                    
         # order = movement_plan.pop(0) 
         
         # if order == 's':
@@ -113,6 +104,7 @@ def main():
         # cv2.imshow('R', roiR)
         
         if cv2.waitKey(40) & 0xFF == ord('q'):
+            print(x_vanish, y_vanish)
             break
 
     cap.release()
