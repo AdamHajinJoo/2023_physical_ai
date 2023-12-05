@@ -70,7 +70,7 @@ def lines_filtered(d_slope_degree, d_line_arr):
 
 def main():
     # 비디오 캡처 객체 초기화
-    frame = cv2.imread('..\img_test.jpg')
+    frame = cv2.imread('img_test2.jpg')
     n_frame = cv2.resize(frame, (416, 416))
     
     # 허프 변환으로 선 감지

@@ -55,7 +55,7 @@ def gen_slope_degree(d_lines):
             slope.append(np.arctan2(np.sin(theta), np.cos(theta)) * 180 / np.pi - 90)
     return np.array(slope)
 
-roi_y = 213
+roi_y = 150
 
 x_van = 0
 y_van = 0
@@ -77,8 +77,8 @@ def main():
             roi_fr = n_frame[roi_y : ,  : ]       # [y:y+h, x:x+w]
             
             # 허프 변환으로 선 감지
-            _, blur, edges = hough.preprocessing_for_hough(roi_fr, 5, 0.1)
-            lines = cv2.HoughLines(edges, 1, np.pi / 180, threshold=110)
+            _, blur, edges = hough.preprocessing_for_hough(roi_fr, 11, 0.1)
+            lines = cv2.HoughLines(edges, 1, np.pi / 180, threshold=100)
             line_arr = np.squeeze(hough.create_hough_lines(lines))
             
             # 선 솎아내기
@@ -108,6 +108,7 @@ def main():
                 cv2.circle(n_frame, (x_van, y_van), 5, (0, 255, 0), 2)
  
             cv2.imshow("n_frame", n_frame)
+            cv2.imshow("edges", edges)
             
         if cv2.waitKey(20) & 0xFF == ord('q'):
             break
