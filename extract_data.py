@@ -51,16 +51,25 @@ def line_arr_slope_degrees(lines):
             slope.append(np.arctan2(np.sin(theta), np.cos(theta)) * 180 / np.pi - 90)
     return np.array(line_arr), np.array(slope)
 
-def find_intersection(x1, y1, x2, y2, x3, y3, x4, y4):
-    m1, b1 = (None, x1) if x1 == x2 else ((y2 - y1) / (x2 - x1), y1 - ((y2 - y1) / (x2 - x1)) * x1)
-    m2, b2 = (None, x3) if x3 == x4 else ((y4 - y3) / (x4 - x3), y3 - ((y4 - y3) / (x4 - x3)) * x3)
+def find_intersection(x11, y11, x12, y12, x21, y21, x22, y22):
+    # 세로 또는 가로로 선분이 있는 경우
+    if x12 == x11 or x22 == x21:
+        if x12 == x11:
+            return x12, (y22 - y21) / (x22 - x21) * (x12 - x21) + y21
+        if x22 == x21:
+            return x22, (y12 - y11) / (x12 - x11) * (x22 - x11) + y11
 
+    m1 = (y12 - y11) / (x12 - x11)
+    m2 = (y22 - y21) / (x22 - x21)
+
+    # 기울기가 같은 경우
     if m1 == m2:
         return None
 
-    x, y = (b1, m2 * b1 + b2) if m1 is None else (b2, m1 * b2 + b1) if m2 is None else ((b2 - b1) / (m1 - m2), m1 * ((b2 - b1) / (m1 - m2)) + b1)
-    
-    return int(x), int(y)
+    cx = (x11 * m1 - y11 - x21 * m2 + y21) / (m1 - m2)
+    cy = m1 * (cx - x11) + y11
+
+    return int(cx), int(cy)
 
 
 def slope_filter(slopesL, linesL_arr, slopesR, linesR_arr):
