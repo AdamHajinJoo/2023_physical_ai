@@ -62,7 +62,7 @@ y_van = 0
 
 def main():
     # 카메라 초기화
-    camera_index = 1 #0
+    camera_index = 0
     cap = cv2.VideoCapture(camera_index)
 
     if not cap.isOpened():
