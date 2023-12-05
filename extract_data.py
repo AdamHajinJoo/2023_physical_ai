@@ -71,7 +71,6 @@ def find_intersection(x11, y11, x12, y12, x21, y21, x22, y22):
 
     return int(cx), int(cy)
 
-
 def slope_filter(slopesL, linesL_arr, slopesR, linesR_arr):
     # 수평 기울기 제한
     linesL_arr = linesL_arr[np.abs(slopesL)>15]
