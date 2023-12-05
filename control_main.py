@@ -1,23 +1,64 @@
 import cv2
 import numpy as np
+import modi
 from dijkstra import *
 from preprocessing import *
 from extract_data import *
 
+global x_van
+global y_van
+
 cursor_position = (0, 0)
 INT_MIN = np.iinfo(np.int32).min
-# roi_frame = [y1:y2, x1:x2]
+
 side = 416
 
 roiL_coord = [(0, 200), (160, 400)]
 roiR_coord = [(256, 200), (416, 400)]
 
-x_vanish = 213
-y_vanish = 250
+# P 제어 상수
+kp = 0.01
 
-def mouse_callback(event, x, y, flags, param):
-    global cursor_position
-    cursor_position = (x, y)
+# 목표 vanish_point (실제로는 여러 방법을 사용하여 이 값을 얻어야 함)
+target_vanish_point = (213, 250)
+
+# 모터 관련 변수 (실제로는 하드웨어 및 제어 라이브러리에 따라 다름)
+left_motor = 0
+right_motor = 0
+
+base_rpm = 1
+
+def set_left_motor_rpm(left_motor_rpm):
+    pass
+
+def set_right_motor_rpm(right_motor_rpm):
+    pass
+
+def control_motors(current_x, target_x):
+    # P 제어 수행
+    error = target_x - current_x
+    control_input = kp * error
+
+    # 좌우 모터 RPM 조절
+    left_motor_rpm = base_rpm + control_input
+    right_motor_rpm = base_rpm - control_input
+
+    # 모터 RPM을 제어하는 코드 (하드웨어 및 라이브러리에 따라 다름)
+    set_left_motor_rpm(left_motor_rpm)
+    set_right_motor_rpm(right_motor_rpm)
+
+def straight_P_control():
+    # 현재 vanish point와 목표 vanish point 간의 수평 오차 계산
+    error_x = x_van - target_vanish_point[0]
+
+    # P 제어를 사용하여 모터 RPM 조절
+    control_motors(x_van, target_vanish_point[0])
+
+def turn_right():
+    pass
+
+def turn_left():
+    pass
 
 def main():
     # 카메라 초기화
@@ -28,6 +69,9 @@ def main():
         print("Could not open webcam")
         exit()
     
+    x_van = 213
+    y_van = 250
+
     while True:
         ret, o_frame = cap.read()
         
@@ -55,11 +99,11 @@ def main():
             linesL, linesR, _, _ = slope_filter(slopesL, linesL_arr, slopesR, linesR_arr)
             L_mean = np.nanmean(linesL, axis=0).astype(int)
             R_mean = np.nanmean(linesR, axis=0).astype(int)
-            
+
             # L_mean이나 R_mean에 INT_MIN 값만 있는 경우에 continue
             if np.all(L_mean == INT_MIN) or np.all(R_mean == INT_MIN):
                 continue
-            
+
             try:
                 if np.isnan(L_mean).any() or np.isnan(R_mean).any():
                     raise ValueError("빈 배열이 포함되어 있습니다.")
@@ -80,10 +124,12 @@ def main():
                 L_mean_shifted[0], L_mean_shifted[1], L_mean_shifted[2], L_mean_shifted[3],
                 R_mean_shifted[0], R_mean_shifted[1], R_mean_shifted[2], R_mean_shifted[3],
             )
-            x_vanish = cx
-            y_vanish = cy
-            
-        cv2.circle(frame, (x_vanish, y_vanish), 5, (0, 255, 0), 2)
+
+            x_van = cx
+            y_van = cy
+
+
+        cv2.circle(frame, (x_van, y_van), 5, (0, 255, 0), 2)
         
         cv2.rectangle(frame, (roiL_coord[0][0], roiL_coord[0][1]), (roiL_coord[1][0], roiL_coord[1][1]), (255, 128, 128), 2)  # roi_l
         cv2.rectangle(frame, (roiR_coord[0][0], roiR_coord[0][1]), (roiR_coord[1][0], roiR_coord[1][1]), (255, 128, 128), 2)  # roi_R
@@ -91,20 +137,20 @@ def main():
         # order = movement_plan.pop(0) 
         
         # if order == 's':
-        #     s()
+        #     straight_P_control()
         
         # if order == 'r':
-        #     r()
+        #     turn_right()
 
         # if order == 'l':
-        #     l()
+        #     turn_left()
                     
         cv2.imshow('ON_AIR', frame)
         # cv2.imshow('L', roiL)
         # cv2.imshow('R', roiR)
         
         if cv2.waitKey(40) & 0xFF == ord('q'):
-            print(x_vanish, y_vanish)
+            print(x_van, y_van)
             break
 
     cap.release()
