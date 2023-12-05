@@ -83,19 +83,19 @@ def main():
             draw_lines(frame, L_mean_shifted, 0, 0, 255)
             draw_lines(frame, R_mean_shifted, 0, 0, 255)
             
-            xf, yf = find_intersection(
+            x_vanish, y_vanish = find_intersection(
                 L_mean_shifted[0], L_mean_shifted[1], L_mean_shifted[2], L_mean_shifted[3],
-                R_mean_shifted[0], R_mean_shifted[1], R_mean_shifted[2], L_mean_shifted[3],
+                R_mean_shifted[0], R_mean_shifted[1], R_mean_shifted[2], R_mean_shifted[3],
             )
             
             print("L_mean: ({0},{1})~({2},{3})".format(L_mean_shifted[0], L_mean_shifted[1], L_mean_shifted[2], L_mean_shifted[3]))
             print("R_mean: ({0},{1})~({2},{3})".format(R_mean_shifted[0], R_mean_shifted[1], R_mean_shifted[2], R_mean_shifted[3]))
-            print("({0}, {1})".format(xf, yf))
+            print("({0}, {1})".format(x_vanish, y_vanish))
             print()
             
             # cv2.circle(frame, (x_van, y_van), 5, (0, 255, 0), 2)
         # 현재 마우스 좌표 표시
-        cv2.putText(frame, f"마우스 좌표: {cursor_position}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+        cv2.putText(frame, f"mouse: {cursor_position}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
             
         # order = movement_plan.pop(0) 
         

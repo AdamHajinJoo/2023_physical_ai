@@ -51,23 +51,14 @@ def line_arr_slope_degrees(lines):
             slope.append(np.arctan2(np.sin(theta), np.cos(theta)) * 180 / np.pi - 90)
     return np.array(line_arr), np.array(slope)
 
-def find_intersection(x11, y11, x12, y12, x21, y21, x22, y22):
-    # 세로 또는 가로로 선분이 있는 경우
-    if x12 == x11 or x22 == x21:
-        if x12 == x11:
-            return x12, (y22 - y21) / (x22 - x21) * (x12 - x21) + y21
-        if x22 == x21:
-            return x22, (y12 - y11) / (x12 - x11) * (x22 - x11) + y11
-
-    m1 = (y12 - y11) / (x12 - x11)
-    m2 = (y22 - y21) / (x22 - x21)
-
-    # 기울기가 같은 경우
-    if m1 == m2:
-        return None
-
-    cx = (x11 * m1 - y11 - x21 * m2 + y21) / (m1 - m2)
-    cy = m1 * (cx - x11) + y11
+def find_intersection(a1, b1, c1, d1, a2, b2, c2, d2):
+    # roi 잡아놓은 것 때문에 평행하거나 뭐 요소가 없거나 등의 예외가 발생할 수가 없음
+    
+    m1 = (d1-b1)/(c1-a1)
+    m2 = (d2-b2)/(c2-a2)
+    
+    cx = ( (m1 * a1) - b1 - (m2 * a2) + b2 )/(m1-m2)
+    cy = m2 * (cx - a2) + b2
 
     return int(cx), int(cy)
 
