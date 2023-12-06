@@ -95,12 +95,12 @@ def path_to_movement_plan(path, graph, init_dir):
 
 
 
-if __name__=="__main__":
+def generate_movement_plan():
     first_dir = 'd'
-    destinations = ['A', 'G', 'J', 'N']
+    destinations = ['A', 'B', 'E', 'F']
     result = dijkstra(graph_map, destinations, first_dir)
-    print(result)
+    # print(result)
 
     movement_plan = path_to_movement_plan(result[1], graph_map, first_dir)
-    print(movement_plan)
+    return movement_plan
 
