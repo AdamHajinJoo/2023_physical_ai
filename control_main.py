@@ -14,7 +14,7 @@ global x_curr
 global y_curr
 
 global maybe_time_to_turn
-turning_time_len = 3000     # 시간(ms) 지나면 다음 order 수행
+turn_time_len = 3000     # 시간(ms) 지나면 다음 order 수행
 frequency = 40
 
 movement_plan = generate_movement_plan()
@@ -31,8 +31,9 @@ kp = 0.1
 target_vanish_point = (213, 160)
 
 # 차체 바퀴 속도 관련
-base_rpm = 100
-turning_time = 4000        # 좌회전 / 우회전하는 시간
+basic_rpm = 100
+turn_time = 4.000        # 좌회전 / 우회전하는 시간
+turn_speed_reduced = 20
 
 def pop(li):
     comp = li.pop(0)
@@ -89,7 +90,7 @@ def process_shifted_lines(linesL_arr, slopesL, linesR_arr, slopesR):
 
 def main():
     # 카메라 초기화
-    camera_index = 1
+    camera_index = 0
     cap = cv2.VideoCapture(camera_index)
 
     # # modi 초기화
@@ -104,24 +105,24 @@ def main():
     # # 왼쪽 앞바퀴의 속도를 조절한다.
     # def set_left_motor_rpm(motor1, motor2, left_motor_rpm):
     #     motor1.speed[0] = left_motor_rpm
-    #     motor2.speed[0] = base_rpm
+    #     motor2.speed[0] = basic_rpm
     #     # motor1의 왼쪽 바퀴와 motor2의 왼쪽 바퀴 모두 rpm 설정
     
     # # 오른쪽 앞바퀴의 속도를 조절한다.
     # def set_right_motor_rpm(motor1, motor2, right_motor_rpm):
     #     motor1.speed[1] = -right_motor_rpm
-    #     motor2.speed[1] = -base_rpm
+    #     motor2.speed[1] = -basic_rpm
     #     # motor1의 오른쪽 바퀴와 motor2의 오른쪽 바퀴 모두 rpm 설정
     
-    # x_curr와 target_x에 따른 P 제어를 실시한다. 속도는 base_rpm에 기반한다.
+    # x_curr와 target_x에 따른 P 제어를 실시한다. 속도는 basic_rpm에 기반한다.
     def control_motors(x_curr, target_x):
         # P 제어 수행
         error = target_x - x_curr
         control_input = kp * error
 
         # 좌우 모터 RPM 조절
-        left_motor_rpm = base_rpm + control_input
-        right_motor_rpm = base_rpm - control_input
+        left_motor_rpm = basic_rpm + control_input
+        right_motor_rpm = basic_rpm - control_input
 
         # 모터 RPM 제어
         # set_left_motor_rpm(left_motor_rpm)
@@ -129,16 +130,16 @@ def main():
         return left_motor_rpm, right_motor_rpm
 
     # 우회전: 오른쪽 바퀴를 느리게 회전한다.
-    def turn_right():
-        set_left_motor_rpm(motor1, motor2, base_rpm)
-        set_right_motor_rpm(motor1, motor2, base_rpm - 20)
-        
+    def turn_right(rpm):
+        # set_left_motor_rpm(motor1, motor2, basic_rpm)
+        # set_right_motor_rpm(motor1, motor2, rpm)
+        time.sleep(turn_time)
         
     # 좌회전: 왼쪽 바퀴를 느리게 회전한다.
-    def turn_left():
-        set_left_motor_rpm(motor1, motor2, base_rpm - 20)
-        set_right_motor_rpm(motor1, motor2, base_rpm)
-        
+    def turn_left(rpm):
+        # set_left_motor_rpm(motor1, motor2, rpm)
+        # set_right_motor_rpm(motor1, motor2, basic_rpm)
+        time.sleep(turn_time)
         
     # movement_plan으로부터 움직일 매뉴얼을 뽑아낸다.
     order = pop(movement_plan)
@@ -170,7 +171,7 @@ def main():
         # 직선차로가 인식되지 않으면 maybe_time_to_turn을 증가시키도록 함
         if linesL_arr.size == 0 or linesR_arr.size == 0 or linesL_arr.ndim == 1 or linesR_arr.ndim == 1:
             result = None
-            maybe_time_to_turn += int(turning_time_len / frequency)
+            maybe_time_to_turn += int(turn_time_len / frequency)
         else:
             maybe_time_to_turn = 0
             result = process_shifted_lines(linesL_arr, slopesL, linesR_arr, slopesR)
@@ -193,11 +194,11 @@ def main():
         # 화면에 정보를 표시.
         cv2.circle(frame, (x_curr, y_curr), 5, (0, 255, 0), 2)  # 소실점
         # movement_plan 현황
-        cv2.putText(frame, f"order: {order}   plan_left: {''.join(movement_plan)}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
-        if maybe_time_to_turn < turning_time_len:
-            cv2.putText(frame, f"maybe_time_to_turn: {maybe_time_to_turn}", (10, 55), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+        cv2.putText(frame, f"order: {order}   plan_left: {''.join(movement_plan)}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 200), 2)
+        if maybe_time_to_turn < turn_time_len:
+            cv2.putText(frame, f"maybe_time_to_turn: {maybe_time_to_turn}", (10, 55), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 200), 2)
         else:
-            cv2.putText(frame, "Turn!", (10, 55), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+            cv2.putText(frame, "Turn!", (10, 55), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (200, 128, 0), 2)
         # ROI 영역 표시
         cv2.rectangle(frame, (roiL_coord[0][0], roiL_coord[0][1]), (roiL_coord[1][0], roiL_coord[1][1]), (255, 128, 128), 2)  # roi_l
         cv2.rectangle(frame, (roiR_coord[0][0], roiR_coord[0][1]), (roiR_coord[1][0], roiR_coord[1][1]), (255, 128, 128), 2)  # roi_R
@@ -205,23 +206,32 @@ def main():
         # movement_plan에 따라 움직임을 제어한다.
         if order == 's':
             front_left, front_right = control_motors(x_curr, target_vanish_point[0])
-            print("앞바퀴 L: {0}, R: {1}\n뒷바퀴 L: {2}, R: {2}".format(front_left, front_right, base_rpm))
-            # maybe_time_to_turn이 turning_time_len을 넘어가는 순간 다음 단계로 넘어간다.
-            if maybe_time_to_turn - frequency < turning_time_len and maybe_time_to_turn >= turning_time_len:
+            cv2.putText(frame, "Turn!", (10, 55), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (200, 128, 0), 2)
+            
+            cv2.putText(frame, f"L: {front_left}, R: {front_right}", (10, 350), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (200, 200, 0), 2)
+            cv2.putText(frame, f"L: {basic_rpm}, R: {basic_rpm}", (10, 375), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (200, 200, 0), 2)
+
+            # maybe_time_to_turn이 turn_time_len을 넘어가는 순간 다음 단계로 넘어간다.
+            if maybe_time_to_turn - frequency < turn_time_len and maybe_time_to_turn >= turn_time_len:
                 order = pop(movement_plan)
             
         if order == 'r':
-            turn_right()
-            print("앞바퀴 L: {0}, R: {1}\n뒷바퀴 L: {2}, R: {2}".format(front_left, front_right, base_rpm))
+            rpm_turn = basic_rpm - turn_speed_reduced
+            cv2.putText(frame, f"L: {basic_rpm}, R: {rpm_turn}", (10, 350), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (200, 200, 0), 2)
+            cv2.putText(frame, f"L: {basic_rpm}, R: {basic_rpm}", (10, 375), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (200, 200, 0), 2)
+            turn_right(rpm_turn)
             order = pop(movement_plan)
 
         if order == 'l':
-            turn_left()
+            rpm_turn = basic_rpm - turn_speed_reduced
+            cv2.putText(frame, f"L: {rpm_turn}, R: {basic_rpm}", (10, 350), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (200, 200, 0), 2)
+            cv2.putText(frame, f"L: {basic_rpm}, R: {basic_rpm}", (10, 375), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (200, 200, 0), 2)
+            turn_left(rpm_turn)
             order = pop(movement_plan)
                     
         cv2.imshow('ON_AIR', frame)
-        cv2.imshow('L', roiL_edges)
-        cv2.imshow('R', roiR_edges)
+        # cv2.imshow('L', roiL_edges)
+        # cv2.imshow('R', roiR_edges)
 
         control_motors(x_curr, target_vanish_point[0])
         
