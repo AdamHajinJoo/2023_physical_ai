@@ -8,19 +8,6 @@ from extract_data import *
 
 '''
 알고리즘 개요:
-1. 카메라 및 MODI 초기화
-2. P 제어 상수 및 목표 vanish_point 설정
-3. 모터 RPM 및 현재 소실점 좌표 초기화
-4. P 제어 함수 및 모터 제어 함수 정의
-5. 움직임 매뉴얼 및 ROI 좌표 설정
-6. 주요 루프 시작
-    7. 카메라로부터 프레임 읽기
-    8. ROI 전처리 및 허프 변환을 통한 소실점 좌표 계산
-    9. P 제어 함수를 사용하여 모터 RPM 조절
-    10. 움직임 매뉴얼에 따라 움직임 제어
-    11. 화면에 소실점 좌표 및 ROI 표시
-    12. 키 입력 대기 및 종료 확인
-13. 주요 루프 종료 후 카메라 및 창 종료
 '''
 
 global x_curr
@@ -43,7 +30,14 @@ kp = 0.1
 # 목표 vanish_point (실제로는 여러 방법을 사용하여 이 값을 얻어야 함)
 target_vanish_point = (213, 160)
 
+# 차체 바퀴 속도 관련
 base_rpm = 100
+turning_time = 4000        # 좌회전 / 우회전하는 시간
+
+def pop(li):
+    comp = li.pop(0)
+    # print(''.join(li))
+    return comp
 
 # 두 평균직선을 도출한다.
 def process_shifted_lines(linesL_arr, slopesL, linesR_arr, slopesR):
@@ -107,16 +101,17 @@ def main():
     x_curr, y_curr = 213, 200
     maybe_time_to_turn = 0
     
-    # # 왼쪽 바퀴들의 속도를 조절한다.
+    # # 왼쪽 앞바퀴의 속도를 조절한다.
     # def set_left_motor_rpm(motor1, motor2, left_motor_rpm):
     #     motor1.speed[0] = left_motor_rpm
-    #     motor2.speed[0] = left_motor_rpm
+    #     motor2.speed[0] = base_rpm
     #     # motor1의 왼쪽 바퀴와 motor2의 왼쪽 바퀴 모두 rpm 설정
-    # # 오른쪽 바퀴들의 속도를 조절한다.
+    
+    # # 오른쪽 앞바퀴의 속도를 조절한다.
     # def set_right_motor_rpm(motor1, motor2, right_motor_rpm):
     #     motor1.speed[1] = -right_motor_rpm
-    #     motor2.speed[1] = -right_motor_rpm
-    #     # motor1의 왼쪽 바퀴와 motor2의 오른쪽 바퀴 모두 rpm 설정
+    #     motor2.speed[1] = -base_rpm
+    #     # motor1의 오른쪽 바퀴와 motor2의 오른쪽 바퀴 모두 rpm 설정
     
     # x_curr와 target_x에 따른 P 제어를 실시한다. 속도는 base_rpm에 기반한다.
     def control_motors(x_curr, target_x):
@@ -128,27 +123,25 @@ def main():
         left_motor_rpm = base_rpm + control_input
         right_motor_rpm = base_rpm - control_input
 
-        # print(left_motor_rpm, right_motor_rpm)
-        # 모터 RPM 제어 (하드웨어 및 라이브러리에 따라 다름)
+        # 모터 RPM 제어
         # set_left_motor_rpm(left_motor_rpm)
         # set_right_motor_rpm(right_motor_rpm)
+        return left_motor_rpm, right_motor_rpm
 
-    # 직진
-    def straight_P_control():
-        # P 제어를 사용하여 모터 RPM 조절
-        control_motors(x_curr, target_vanish_point[0])
-
-    # 우회전
+    # 우회전: 오른쪽 바퀴를 느리게 회전한다.
     def turn_right():
-        pass
-
-    # 좌회전
+        set_left_motor_rpm(motor1, motor2, base_rpm)
+        set_right_motor_rpm(motor1, motor2, base_rpm - 20)
+        
+        
+    # 좌회전: 왼쪽 바퀴를 느리게 회전한다.
     def turn_left():
-        pass
-
+        set_left_motor_rpm(motor1, motor2, base_rpm - 20)
+        set_right_motor_rpm(motor1, motor2, base_rpm)
+        
+        
     # movement_plan으로부터 움직일 매뉴얼을 뽑아낸다.
-    order = movement_plan.pop(0)
-    print(movement_plan)
+    order = pop(movement_plan)
 
     if not cap.isOpened():
         print("Could not open webcam")
@@ -167,13 +160,14 @@ def main():
         roiL = frame[roiL_coord[0][1] : roiL_coord[1][1], roiL_coord[0][0] : roiL_coord[1][0]]
         roiR = frame[roiR_coord[0][1] : roiR_coord[1][1], roiR_coord[0][0] : roiR_coord[1][0]]
 
-        roiL_edges = img_preprocess(roiL, 11, 0.15)
-        roiR_edges = img_preprocess(roiR, 11, 0.15)
+        roiL_edges = img_preprocess(roiL, 7, 0.2)
+        roiR_edges = img_preprocess(roiR, 7, 0.2)
 
         # ROI를 허프 변환하여 소실점을 구하기 위한 직선 두 개를 구한다.
         linesL_arr, slopesL = line_arr_slope_degrees(hough_line_raw(roiL_edges, 70))
         linesR_arr, slopesR = line_arr_slope_degrees(hough_line_raw(roiR_edges, 70))
         
+        # 직선차로가 인식되지 않으면 maybe_time_to_turn을 증가시키도록 함
         if linesL_arr.size == 0 or linesR_arr.size == 0 or linesL_arr.ndim == 1 or linesR_arr.ndim == 1:
             result = None
             maybe_time_to_turn += int(turning_time_len / frequency)
@@ -199,7 +193,7 @@ def main():
         # 화면에 정보를 표시.
         cv2.circle(frame, (x_curr, y_curr), 5, (0, 255, 0), 2)  # 소실점
         # movement_plan 현황
-        cv2.putText(frame, f"order: {order}   plan_left: {len(movement_plan)}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+        cv2.putText(frame, f"order: {order}   plan_left: {''.join(movement_plan)}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
         if maybe_time_to_turn < turning_time_len:
             cv2.putText(frame, f"maybe_time_to_turn: {maybe_time_to_turn}", (10, 55), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
         else:
@@ -210,24 +204,24 @@ def main():
         
         # movement_plan에 따라 움직임을 제어한다.
         if order == 's':
-            straight_P_control()
-            
+            front_left, front_right = control_motors(x_curr, target_vanish_point[0])
+            print("앞바퀴 L: {0}, R: {1}\n뒷바퀴 L: {2}, R: {2}".format(front_left, front_right, base_rpm))
             # maybe_time_to_turn이 turning_time_len을 넘어가는 순간 다음 단계로 넘어간다.
             if maybe_time_to_turn - frequency < turning_time_len and maybe_time_to_turn >= turning_time_len:
-                order = movement_plan.pop(0)
-                print(movement_plan)
+                order = pop(movement_plan)
             
         if order == 'r':
             turn_right()
-            order = movement_plan.pop(0)
-            
+            print("앞바퀴 L: {0}, R: {1}\n뒷바퀴 L: {2}, R: {2}".format(front_left, front_right, base_rpm))
+            order = pop(movement_plan)
+
         if order == 'l':
             turn_left()
-            order = movement_plan.pop(0)
+            order = pop(movement_plan)
                     
         cv2.imshow('ON_AIR', frame)
-        # cv2.imshow('L', roiL_edges)
-        # cv2.imshow('R', roiR_edges)
+        cv2.imshow('L', roiL_edges)
+        cv2.imshow('R', roiR_edges)
 
         control_motors(x_curr, target_vanish_point[0])
         
